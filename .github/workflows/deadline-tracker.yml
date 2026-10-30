@@ -1,0 +1,51 @@
+# ============================================================
+# Contract-Guard ZeroBaran - متتبع المواعيد النهائية للعقود
+# يفحص العقود المؤرشفة ويُذكّر بالمواعيد القادمة قبل أسبوع
+# المؤلف: Baran Avisat
+# ============================================================
+name: Deadline Tracker
+
+on:
+  schedule:
+    # كل يوم ساعة 06:00 UTC (09:00 بتوقيت إسطنبول)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-deadlines:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 استخراج الكود
+        uses: actions/checkout@v4
+
+      - name: 🐍 تثبيت بايثون
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 تثبيت المتطلبات
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: ⏰ فحص المواعيد النهائية
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/check_deadlines.py
+
+      - name: 📊 تقرير الحالة
+        if: always()
+        run: |
+          echo "## 📊 تقرير فحص المواعيد النهائية" >> $GITHUB_STEP_SUMMARY
+          echo "**التاريخ:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**الحالة:** اكتمل الفحص" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,59 @@
+# ===== ملفات البيئة والمفاتيح =====
+.env
+.env.local
+*.key
+
+# ===== مجلدات بايثون =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ===== بيئة افتراضية =====
+venv/
+env/
+ENV/
+.venv/
+
+# ===== ملفات قاعدة البيانات المحلية =====
+*.db
+*.sqlite3
+data/uploads/
+data/processed/
+
+# ===== ملفات النظام =====
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ===== IDEs =====
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ===== السجلات =====
+*.log
+logs/
+
+# ===== مخرجات التحليل =====
+output/
+reports/

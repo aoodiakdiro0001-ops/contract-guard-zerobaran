@@ -1,0 +1,83 @@
+# ============================================================
+# Contract-Guard ZeroBaran - سير عمل معالجة العقود المجدول
+# ينفّذ التحليل الدوري للعقود الجديدة ومتابعة المواعيد النهائية
+# المؤلف: Baran Avisat
+# ============================================================
+name: Contract-Guard Daily Analysis
+
+on:
+  schedule:
+    # ينفّذ يومياً عند الساعة 08:00 UTC (11:00 بتوقيت إسطنبول)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # تشغيل يدوي
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 استخراج الكود
+        uses: actions/checkout@v4
+
+      - name: 🐍 تثبيت بايثون
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 تثبيت المتطلبات
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: ⚙️ تهيئة البيئة
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_LANGUAGE: 'ar'
+          ANALYSIS_STRICTNESS: 'balanced'
+        run: |
+          echo "✅ تم تحميل المتغيرات البيئية"
+          python -c "from src.config import settings; print(settings.summary())"
+
+      - name: 📂 فحص العقود الجديدة
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/run_analysis.py --check-new
+
+      - name: ⏰ فحص المواعيد النهائية
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/run_analysis.py --check-deadlines
+
+      - name: 📊 رفع السجلات
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-logs-${{ github.run_id }}
+          path: |
+            output/
+            *.log
+          retention-days: 14
